@@ -1708,7 +1708,7 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 	end
 end
 
-function Playerlist:TopbarEnabledChanged(enabled)
+Playerlist.TopbarEnabledChanged = function(enabled)
 	topbarEnabled = enabled
 	-- Update coregui to reflect new topbar status
 	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))

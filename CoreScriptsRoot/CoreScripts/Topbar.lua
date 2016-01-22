@@ -37,6 +37,9 @@ local function GetChatVisibleIconFlag()
 	return chatVisibleIconSuccess and chatVisibleIconFlagValue == true
 end
 
+local disableableTopbarSuccess, disableableTopbarFlagValue = pcall(function() return settings():GetFFlag("EnableSetCoreTopbarEnabled") end)
+local disableableTopbar = (disableableTopbarSuccess and disableableTopbarFlagValue == true)
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -165,9 +168,18 @@ local function CreateTopBar()
 		return topbarContainer
 	end
 
+	local function ComputeTransparency(opaque)
+		if not topbarEnabled then
+			return 1
+		elseif opaque then
+			return TOPBAR_OPAQUE_TRANSPARENCY
+		end
+		return TOPBAR_TRANSLUCENT_TRANSPARENCY
+	end
+
 	function this:SetTopbarDisplayMode(opaque)
-		topbarContainer.BackgroundTransparency = (not topbarEnabled and 1) or (opaque and TOPBAR_OPAQUE_TRANSPARENCY) or TOPBAR_TRANSLUCENT_TRANSPARENCY
-		topbarShadow.Visible = not opaque and topbarEnabled
+		topbarContainer.BackgroundTransparency = ComputeTransparency(opaque)
+		topbarShadow.Visible = topbarEnabled and not opaque
 		this:UpdateBackgroundTransparency()
 	end
 
@@ -629,7 +641,7 @@ local function CreateLeaderstatsMenuItem()
 	setmetatable(this, mtStore)
 
 	topbarEnabledChangedEvent.Event:connect(function()
-		PlayerlistModule:TopbarEnabledChanged(topbarEnabled)
+		PlayerlistModule.TopbarEnabledChanged(topbarEnabled)
 	end)
 
 	this:SetColumns(PlayerlistModule.GetStats())
@@ -1245,12 +1257,14 @@ function topBarEnabledChanged()
 	end
 end
 
-StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
-	if type(enabled) == "boolean" then 
-		topbarEnabled = enabled
-		topBarEnabledChanged()
-	end
-end)
+if disableableTopbar then
+	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
+		if type(enabled) == "boolean" then 
+			topbarEnabled = enabled
+			topBarEnabledChanged()
+		end
+	end)
+end
 
 -- Hook-up coregui changing
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
